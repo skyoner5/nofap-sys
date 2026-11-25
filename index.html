@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOFAP.SYS — Discipline Enforcement Terminal</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+:root{--bg:#060907;--panel:#0c130e;--panel2:#0a100c;--line:#1c2b1f;--green:#4dff88;--green-dim:#2a7a4a;--green-glow:rgba(77,255,136,.35);--cyan:#5fe8ff;--red:#ff4d5e;--amber:#ffcf5c;--muted:#6f8b78;--mono:'JetBrains Mono',monospace}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--green);font-family:var(--mono);min-height:100vh;overflow-x:hidden;position:relative}
+body::before{content:"";position:fixed;inset:0;background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.18) 3px);pointer-events:none;z-index:50;mix-blend-mode:multiply}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:49;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.65) 100%)}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px}
+.bar{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);border:1px solid var(--line);background:var(--panel2);padding:8px 12px;border-radius:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green-glow)}
+.boot{font-size:12px;color:var(--muted);margin:16px 0 4px;line-height:1.8}
+.boot b{color:var(--green)}
+h1{font-size:44px;font-weight:800;margin:12px 0 6px;letter-spacing:2px;text-shadow:0 0 18px var(--green-glow)}
+.tag{color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 18px}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tab{flex:1;background:var(--panel);color:var(--muted);border:1px solid var(--line);font:inherit;font-size:12px;padding:10px;border-radius:6px;cursor:pointer}
+.tab.on{color:var(--green);border-color:var(--green-dim);box-shadow:0 0 10px var(--green-glow)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px;margin-bottom:14px}
+.clock{font-size:34px;font-weight:700;text-align:center;text-shadow:0 0 14px var(--green-glow);margin:6px 0}
+.state{text-align:center;font-size:12px;color:var(--cyan);letter-spacing:1px}
+.fail{width:100%;margin-top:16px;background:transparent;color:var(--red);border:1px solid var(--red);font:inherit;font-weight:700;font-size:14px;padding:14px;border-radius:6px;cursor:pointer}
+.fail:active{background:rgba(255,77,94,.15)}
+.link{display:block;margin:10px auto 0;background:none;border:0;color:var(--muted);font:inherit;font-size:11px;text-decoration:underline;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:center}
+.stat b{display:block;font-size:24px}
+.stat span{font-size:10px;color:var(--muted)}
+.hide{display:none}
+.heat{display:grid;grid-template-rows:repeat(7,1fr);grid-auto-flow:column;gap:4px}
+.cell{aspect-ratio:1;border-radius:3px;background:#101a13}
+.cell.clean{background:var(--green-dim)}
+.cell.slip{background:var(--red)}
+.cell.void{background:transparent}
+.legend{font-size:10px;color:var(--muted);margin-top:10px;display:flex;gap:12px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+.days{margin-top:16px}
+.day{display:flex;justify-content:space-between;font-size:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.pager{display:flex;justify-content:space-between;margin-top:10px}
+.pager button{background:none;border:1px solid var(--line);color:var(--muted);font:inherit;font-size:11px;padding:6px 10px;border-radius:5px;cursor:pointer}
+.loghead{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:8px}
+.log{font-size:11px;line-height:1.8;color:var(--muted);max-height:180px;overflow:auto}
+.log div b{color:var(--green)}
+.log div.s b{color:var(--red)}
+footer{font-size:11px;color:var(--muted);text-align:center;line-height:1.8;margin-top:24px}
+footer a{color:var(--cyan);text-decoration:none;border-bottom:1px solid var(--cyan)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.on{display:flex}
+.box{background:var(--panel);border:1px solid var(--red);border-radius:10px;padding:22px;max-width:420px;width:100%;text-align:center;position:relative;box-shadow:0 0 30px rgba(255,77,94,.25)}
+.x{position:absolute;top:10px;right:14px;background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer}
+.viol{color:var(--red);font-size:11px;letter-spacing:2px}
+.box h2{margin:8px 0;font-size:24px}
+.box p{font-size:12px;color:var(--muted);line-height:1.6}
+#qr{background:#fff;padding:8px;border-radius:6px;display:inline-block;margin:10px 0}
+.addr{font-size:11px;word-break:break-all;background:var(--panel2);border:1px solid var(--line);padding:10px;border-radius:6px;margin:8px 0}
+.row{display:flex;gap:8px}
+.row button{flex:1;font:inherit;font-size:12px;padding:12px;border-radius:6px;cursor:pointer;border:1px solid var(--green-dim);background:transparent;color:var(--green)}
+.row button.main{background:var(--green);color:#04120a;font-weight:700}
+.copied{font-size:11px;color:var(--green);height:14px;margin-top:8px}
+@media(max-width:380px){h1{font-size:36px}.clock{font-size:28px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar"><span class="dot"></span>nofap.sys — enforcement daemon ~/discipline/session</div>
+  <div class="boot">&gt; booting <b>WILLPOWER.EXE</b> ... loaded<br>&gt; monitoring subject for weakness ... <b>active</b></div>
+  <h1>STAY HARD</h1>
+  <p class="tag">Every relapse costs you real money. No excuses logged, no mercy given. The chain only breaks when you break first.</p>
+
+  <div class="tabs">
+    <button class="tab on" data-t="timer">TIMER</button>
+    <button class="tab" data-t="daily">DAILY</button>
+    <button class="tab" data-t="monthly">MONTHLY</button>
+  </div>
+
+  <div id="timer" class="panel">
+    <div class="clock" id="clock">0d 00h 00m 00s</div>
+    <div class="state" id="state">CURRENTLY CLEAN</div>
+    <button class="fail" id="fail">⚠ I FAILED — INITIATE PENALTY</button>
+    <button class="link" id="reset">reset session</button>
+  </div>
+
+  <div id="daily" class="panel hide">
+    <div class="loghead"><span>LAST 15 WEEKS</span></div>
+    <div class="heat" id="heat"></div>
+    <div class="legend"><span><i style="background:#101a13"></i>no data</span><span><i style="background:var(--green-dim)"></i>clean day</span><span><i style="background:var(--red)"></i>slipped</span></div>
+    <div class="days" id="days"></div>
+    <div class="pager"><button id="prev">← prev</button><button id="next">next →</button></div>
+  </div>
+
+  <div id="monthly" class="panel hide">
+    <div class="stats" style="margin:0">
+      <div class="stat"><b id="mSlips">0</b><span>SLIPS THIS MONTH</span></div>
+      <div class="stat"><b id="mClean">0</b><span>CLEAN DAYS</span></div>
+      <div class="stat"><b id="mTribute">$0</b><span>TRIBUTE THIS MONTH</span></div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="tSlips">0</b><span>TOTAL SLIPS</span></div>
+    <div class="stat"><b id="tOwed">$0</b><span>TRIBUTE OWED</span></div>
+    <div class="stat"><b id="tBest">0</b><span>BEST STREAK (d)</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="loghead"><span>SYSTEM LOG</span><span id="logN">0 entries</span></div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <footer>
+    self-reported, honor-system, on-chain guilt. data stored locally in this browser only.<br>
+    Follow the project on <a href="https://x.com/cr8pto" target="_blank" rel="noopener">X</a>
+  </footer>
+</div>
+
+<div class="modal" id="modal">
+  <div class="box">
+    <button class="x" id="close">✕</button>
+    <div class="viol">VIOLATION DETECTED</div>
+    <h2>Pay the toll.</h2>
+    <p>Streak reset to zero. The rules say $1 in SOL, sent without complaint, to the address below. Scan or copy. The chain is watching.</p>
+    <p>send <b style="color:var(--green)">≈ $1.00</b> worth of SOL</p>
+    <div id="qr"></div>
+    <div class="addr" id="addr">3SLse5JmCZ3EgZ6f7Lc8Kr3Ryr2YfX8Di4bzqiGxJiKH</div>
+    <div class="row"><button id="copy">copy address</button><button class="main" id="sent">i sent it</button></div>
+    <div class="copied" id="copied"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var ADDR='3SLse5JmCZ3EgZ6f7Lc8Kr3Ryr2YfX8Di4bzqiGxJiKH', KEY='nofapsys.v1', DAY=86400000, FEE=1;
+  var $=function(id){return document.getElementById(id)};
+  var S={start:Date.now(),since:Date.now(),slips:[],owed:0,best:0,log:[]};
+  try{var raw=localStorage.getItem(KEY);if(raw){S=Object.assign(S,JSON.parse(raw))}}catch(e){}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+  function key(d){d=new Date(d);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+  function two(n){return String(n).padStart(2,'0')}
+  function log(msg,cls){S.log.unshift({t:Date.now(),m:msg,c:cls||''});S.log=S.log.slice(0,100);save()}
+  function curDays(){return Math.floor((Date.now()-S.start)/DAY)}
+
+  function tick(){
+    var ms=Date.now()-S.start,s=Math.floor(ms/1000);
+    var d=Math.floor(s/86400),h=Math.floor(s%86400/3600),m=Math.floor(s%3600/60),sec=s%60;
+    $('clock').textContent=d+'d '+two(h)+'h '+two(m)+'m '+two(sec)+'s';
+    $('state').textContent=d>=1?'STREAK ACTIVE':(S.slips.length?'CURRENTLY CLEAN':'FRESH START');
+    var b=Math.max(S.best,d);if(b!==$('tBest').textContent*1)$('tBest').textContent=b;
+  }
+
+  function slipDays(){var o={};S.slips.forEach(function(t){o[key(t)]=1});return o}
+  var page=0;
+  function renderDaily(){
+    var sd=slipDays(),since=key(S.since),today=new Date();today.setHours(0,0,0,0);
+    var first=new Date(today);first.setDate(first.getDate()-(14*7+today.getDay()));
+    var heat=$('heat');heat.innerHTML='';
+    for(var i=0;i<105;i++){
+      var d=new Date(first);d.setDate(first.getDate()+i);
+      var c=document.createElement('div');c.className='cell';
+      var k=key(d);
+      if(d>today)c.className+=' void';
+      else if(sd[k])c.className+=' slip';
+      else if(k>=since)c.className+=' clean';
+      c.title=k;heat.appendChild(c);
+    }
+    var box=$('days');box.innerHTML='';
+    for(var j=0;j<7;j++){
+      var dd=new Date(today);dd.setDate(today.getDate()-(page*7+j));
+      var kk=key(dd),st=sd[kk]?'slipped':(kk>=since?'clean':'no data');
+      var r=document.createElement('div');r.className='day';
+      r.innerHTML='<span>'+kk+'</span><span style="color:'+(sd[kk]?'var(--red)':kk>=since?'var(--green)':'var(--muted)')+'">'+st+'</span>';
+      box.appendChild(r);
+    }
+    $('next').style.visibility=page===0?'hidden':'visible';
+  }
+  function renderMonthly(){
+    var n=new Date(),m=n.getMonth(),y=n.getFullYear(),sd=slipDays(),since=key(S.since);
+    var slips=S.slips.filter(function(t){var d=new Date(t);return d.getMonth()===m&&d.getFullYear()===y}).length;
+    var clean=0;
+    for(var i=1;i<=n.getDate();i++){var k=y+'-'+two(m+1)+'-'+two(i);if(k>=since&&!sd[k])clean++}
+    $('mSlips').textContent=slips;$('mClean').textContent=clean;$('mTribute').textContent='$'+slips*FEE;
+  }
+  function renderStats(){
+    $('tSlips').textContent=S.slips.length;
+    $('tOwed').textContent='$'+S.owed*FEE;
+    $('tBest').textContent=Math.max(S.best,curDays());
+    $('logN').textContent=S.log.length+' entries';
+    var l=$('log');l.innerHTML='';
+    S.log.slice(0,15).forEach(function(e){
+      var d=document.createElement('div');if(e.c)d.className=e.c;
+      var t=new Date(e.t);
+      d.innerHTML='<b>['+key(t)+' '+two(t.getHours())+':'+two(t.getMinutes())+']</b> '+e.m;
+      l.appendChild(d);
+    });
+    if(!S.log.length)l.innerHTML='<div>no entries yet</div>';
+  }
+  function renderAll(){renderStats();renderDaily();renderMonthly();tick()}
+
+  document.querySelectorAll('.tab').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('on',x===b)});
+      ['timer','daily','monthly'].forEach(function(id){$(id).classList.toggle('hide',id!==b.dataset.t)});
+    };
+  });
+  $('prev').onclick=function(){page++;renderDaily()};
+  $('next').onclick=function(){if(page>0){page--;renderDaily()}};
+
+  var qrMade=false;
+  function openModal(){
+    $('modal').classList.add('on');
+    if(!qrMade&&window.QRCode){new QRCode($('qr'),{text:ADDR,width:160,height:160});qrMade=true}
+  }
+  $('fail').onclick=function(){
+    var days=curDays();S.best=Math.max(S.best,days);
+    S.slips.push(Date.now());S.owed++;S.start=Date.now();
+    log('slip logged. streak of '+days+'d reset. $'+FEE+' owed.','s');
+    renderAll();openModal();
+  };
+  $('close').onclick=function(){$('modal').classList.remove('on')};
+  $('sent').onclick=function(){
+    if(S.owed>0)S.owed--;
+    log('toll marked as sent.');
+    $('modal').classList.remove('on');renderAll();
+  };
+  $('copy').onclick=function(){
+    function done(){$('copied').textContent='✓ copied to clipboard';setTimeout(function(){$('copied').textContent=''},1800)}
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(ADDR).then(done,done)}
+    else{var r=document.createRange();r.selectNodeContents($('addr'));var s=window.getSelection();s.removeAllRanges();s.addRange(r);try{document.execCommand('copy')}catch(e){}done()}
+  };
+  $('reset').onclick=function(){
+    if(!confirm('Wipe all data and start over?'))return;
+    S={start:Date.now(),since:Date.now(),slips:[],owed:0,best:0,log:[]};
+    log('session reset.');page=0;renderAll();
+  };
+
+  if(!S.log.length)log('daemon started. streak begins now.');
+  renderAll();setInterval(tick,1000);
+})();
+</script>
+</body>
+</html>
